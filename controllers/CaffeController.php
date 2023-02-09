@@ -2,78 +2,91 @@
 
 namespace app\controllers;
 
-use Doctrine\DBAL\Exception;
+use app\models\ReceiptModel;
+use app\services\CooksService;
+use app\services\DishesService;
+use app\services\ReceiptsService;
 
 class CaffeController extends AbstractController
 {
-    /**
-     * @throws Exception
-     */
-    public function createCheck(): void
-    {
-        $params = $this->request->getUrl()->getParams();
+    private DishesService $dishesService;
+    private ReceiptsService $receiptsService;
+    private CooksService $cooksService;
 
-        if (is_array($body = $this->validateDish($params))) {
-            $this->response->json($body, 0);
+    public function __construct()
+    {
+        parent::__construct();
+
+        $this->dishesService = new DishesService();
+        $this->receiptsService = new ReceiptsService();
+        $this->cooksService = new CooksService();
+    }
+
+    /**
+     * @param int $dishId
+     * @return void
+     */
+    public function createReceipt(int $dishId): void
+    {
+        if (!$this->dishesService->exists($dishId)) {
+            $this->response->json([
+                'message' => "Dish with id {$dishId} not found.",
+            ], 0);
         }
 
-        $this->db
-            ->insert('receipts')
-            ->values([
-                'dish_id' => '?',
-                'open_date' => '?',
-            ])
-            ->setParameters([
-                json_encode([$params['dish_id']]),
-                date('Y-m-d H:i:s')
-            ])
-            ->executeQuery();
+        $dishId = $this->receiptsService->add($dishId);
 
         $this->response->json([
-            'message' => 'Receipts successfully created!',
-            'code' => 200,
+            'message' => "Receipt #{$dishId} successfully created!",
         ], 0);
     }
 
-    public function addDish(): void
+    /**
+     * @param int $id
+     * @param int $dishId
+     * @return void
+     */
+    public function addToReceipt(int $id, int $dishId): void
     {
-        $params = $this->request->getUrl()->getParams();
-
-        if (is_array($body = $this->validateDish($params))) {
-            $this->response->json($body, 0);
+        if (!$this->receiptsService->exists($id)) {
+            $this->response->json([
+                'message' => "Receipt #{$id} not found.",
+            ], 0);
         }
 
-        $dishes = $this->db
-            ->select('*')
-            ->from('receipts')
-            ->where('id = ?')
-            ->setParameter(0, $params['receipt_id'])
-            ->fetchAssociative();
+        if (!$this->dishesService->exists($dishId)) {
+            $this->response->json([
+                'message' => "Dish with id {$dishId} not found.",
+            ], 0);
+        }
+
+        $dishes = ReceiptModel::getDishes($id);
+        $dishes[] = $dishId;
+
+        $isUpdated = $this->receiptsService->update($id, $dishes);
+
+        if ($isUpdated) {
+            $this->response->json([
+                'message' => "The dish with id {$dishId} was added to receipt #{$dishId}.",
+            ], 0);
+        }
+
+        $this->response->json([
+            'message' => "The dish with id {$dishId} wasn't added to receipt.",
+        ], 0);
     }
 
-    public function validateDish(array $params): array|bool
+    /**
+     * @return void
+     */
+    public function getPopularCook(): void
     {
-        if (empty($params['dish_id'])) {
-            return [
-                'message' => 'Error: dish_id not found.',
-                'code' => 404,
-            ];
-        }
+        $receipts = ReceiptModel::all();
 
-        $exists = $this->db
-            ->select('*')
-            ->from('dishes')
-            ->where('id = ?')
-            ->setParameter(0, $params['dish_id'])
-            ->fetchAssociative();
+        $cooks = $this->cooksService->getPopulars($receipts);
 
-        if (!$exists) {
-            return [
-                'message' => "Dish with id {$params['dish_id']} not found.",
-                'code' => 404,
-            ];
-        }
-
-        return true;
+        $this->response->json([
+           'data' => $cooks,
+        ], 0);
     }
 }

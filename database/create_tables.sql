@@ -3,21 +3,24 @@ USE symfony;
 CREATE TABLE cooks
 (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(24)
+    name VARCHAR(24),
+    updated_at DATETIME null
 );
 
 CREATE TABLE dishes
 (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(24),
-    cook_id BIGINT UNSIGNED
+    cook_id BIGINT UNSIGNED,
+    updated_at DATETIME null
 );
 
 CREATE TABLE receipts
 (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     dish_id TEXT,
-    open_date DATETIME
+    open_date DATETIME,
+    updated_at DATETIME null
 );
 
 INSERT cooks(name)

@@ -4,7 +4,7 @@
     "lcobucci/jwt": "*",
     "ext-json": "*",
     "vlucas/phpdotenv": "^4.2",
-    "doctrine/dbal": "^3.6"
+    "illuminate/database": "^9.51"
   },
   "autoload": {
     "psr-4": {
