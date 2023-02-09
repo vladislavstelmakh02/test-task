@@ -1,0 +1,14 @@
+{
+  "require": {
+    "pecee/simple-router": "*",
+    "lcobucci/jwt": "*",
+    "ext-json": "*",
+    "vlucas/phpdotenv": "^4.2",
+    "doctrine/dbal": "^3.6"
+  },
+  "autoload": {
+    "psr-4": {
+      "app\\": ""
+    }
+  }
+}
